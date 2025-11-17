@@ -1,12 +1,20 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Send, Bot, User, Loader2 } from 'lucide-react';
+import { X, Send, Bot, User } from 'lucide-react';
 import { sendMessageToChat, startChat } from '../services/geminiService';
 
 interface Message {
   text: string;
   sender: 'user' | 'bot';
 }
+
+const ResonanceLoader = () => (
+    <div className="flex space-x-1">
+        <div className="w-1.5 h-1.5 bg-white rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+        <div className="w-1.5 h-1.5 bg-white rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+        <div className="w-1.5 h-1.5 bg-white rounded-full animate-bounce"></div>
+    </div>
+);
 
 export default function ChatBot({ onClose }: { onClose: () => void }) {
   const [messages, setMessages] = useState<Message[]>([
@@ -40,7 +48,7 @@ export default function ChatBot({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-[100] flex items-center justify-center">
       <div className="bg-resonance-gray-800 w-full max-w-md h-[80vh] flex flex-col rounded-2xl shadow-2xl m-4">
         <header className="flex items-center justify-between p-4 border-b border-resonance-gray-700">
           <div className="flex items-center space-x-2">
@@ -65,8 +73,8 @@ export default function ChatBot({ onClose }: { onClose: () => void }) {
            {isLoading && (
               <div className="flex items-start space-x-3">
                  <div className="w-8 h-8 rounded-full bg-resonance-gray-700 flex items-center justify-center flex-shrink-0"><Bot size={20} className="text-electric-blue-500" /></div>
-                 <div className="p-3 rounded-lg bg-resonance-gray-700 rounded-bl-none">
-                     <Loader2 className="animate-spin text-white" size={20} />
+                 <div className="p-3 rounded-lg bg-resonance-gray-700 rounded-bl-none flex items-center justify-center">
+                     <ResonanceLoader />
                  </div>
               </div>
            )}

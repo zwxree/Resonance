@@ -2,7 +2,7 @@
 import React, { useState, useCallback } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { analyzeWithThinkingMode, generateSpeech } from '../services/geminiService';
-import { Bot, Loader2, Volume2, X } from 'lucide-react';
+import { Bot, Volume2, X } from 'lucide-react';
 import { decode, decodeAudioData } from '../utils/audioUtils';
 
 const dailyData = [
@@ -22,6 +22,16 @@ const monthlyData = [
 ];
 
 type Period = 'Day' | 'Week' | 'Month';
+
+const ResonanceLoader = () => (
+    <svg width="48" height="48" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" className="text-electric-blue-500">
+        <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" strokeWidth="5" strokeOpacity="0.3" />
+        <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" strokeWidth="5" strokeDasharray="70 210">
+            <animateTransform attributeName="transform" type="rotate" from="0 50 50" to="360 50 50" dur="1s" repeatCount="indefinite" />
+        </circle>
+    </svg>
+);
+
 
 const useAudioPlayer = () => {
   const [isPlaying, setIsPlaying] = useState(false);
@@ -151,7 +161,7 @@ export default function UsageScreen() {
             </div>
             {isLoadingAnalysis ? (
               <div className="flex flex-col items-center justify-center min-h-[200px]">
-                <Loader2 className="animate-spin text-electric-blue-500" size={48} />
+                <ResonanceLoader />
                 <p className="mt-4 text-resonance-gray-500">Gemini is thinking...</p>
               </div>
             ) : (

@@ -1,15 +1,62 @@
 
-import React, { useState } from 'react';
-import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Zap, Thermometer, Droplets, Sun } from 'lucide-react';
 
-const mockConsumptionData = [
-  { time: '1m ago', kW: 1.2 }, { time: '55s ago', kW: 1.3 }, { time: '50s ago', kW: 1.5 },
-  { time: '45s ago', kW: 1.4 }, { time: '40s ago', kW: 1.6 }, { time: '35s ago', kW: 1.8 },
-  { time: '30s ago', kW: 1.7 }, { time: '25s ago', kW: 2.1 }, { time: '20s ago', kW: 2.0 },
-  { time: '15s ago', kW: 1.9 }, { time: '10s ago', kW: 2.2 }, { time: '5s ago', kW: 2.4 },
-  { time: 'Now', kW: 2.3 },
-];
+const EnergyVisualizer: React.FC<{ consumption: number; isAttunerOn: boolean }> = ({ consumption, isAttunerOn }) => {
+    const particlesCount = Math.min(Math.floor(consumption * 10), 50); // Max 50 particles
+    const baseSpeed = 8; // seconds for one rotation
+    const speed = isAttunerOn ? Math.max(baseSpeed - consumption, 1.5) : baseSpeed;
+
+    const particles = useMemo(() => {
+        return Array.from({ length: 50 }).map((_, i) => {
+            const angle = Math.random() * 360;
+            const radius = 40 + Math.random() * 50; // Random radius between 40 and 90
+            const size = 1 + Math.random() * 2.5;
+            const delay = Math.random() * speed;
+            return { id: i, angle, radius, size, delay };
+        });
+    }, [speed]);
+
+    return (
+        <div className="relative w-full h-56 flex items-center justify-center">
+             <svg viewBox="0 0 200 200" className="absolute w-full h-full">
+                {/* Connection Quality Pulse */}
+                <circle cx="100" cy="100" r="40" fill="transparent" stroke="#00A9FF" strokeWidth="1" strokeOpacity="0.5">
+                    <animate attributeName="r" from="40" to="80" dur="3s" repeatCount="indefinite" begin="0s" />
+                    <animate attributeName="stroke-opacity" from="0.5" to="0" dur="3s" repeatCount="indefinite" begin="0s" />
+                </circle>
+                {/* Energy Particles */}
+                {particles.map((p, index) => (
+                     <g key={p.id} style={{ display: isAttunerOn && index < particlesCount ? 'block' : 'none' }}>
+                        <circle cx="100" cy="100" r={p.size} fill="#00A9FF" opacity="0.8">
+                            <animateTransform
+                                attributeName="transform"
+                                type="rotate"
+                                from={`0 100 100`}
+                                to={`360 100 100`}
+                                dur={`${speed}s`}
+                                begin={`-${p.delay}s`}
+                                repeatCount="indefinite"
+                            />
+                             <animateMotion
+                                dur={`${speed}s`}
+                                begin={`-${p.delay}s`}
+                                repeatCount="indefinite"
+                                path={`M${100+p.radius},100 A${p.radius},${p.radius} 0 1,1 ${100-p.radius},100 A${p.radius},${p.radius} 0 1,1 ${100+p.radius},100`}
+                             />
+                        </circle>
+                    </g>
+                ))}
+            </svg>
+            
+            <div className="z-10 text-center">
+                <span className="text-4xl font-bold text-electric-blue-400">{consumption.toFixed(1)}</span>
+                <span className="text-xl font-medium text-resonance-gray-500 ml-2">kW</span>
+                 <p className="text-sm text-resonance-gray-500">Real-time usage</p>
+            </div>
+        </div>
+    );
+};
 
 const ToggleSwitch: React.FC<{ isOn: boolean; onToggle: () => void }> = ({ isOn, onToggle }) => (
   <button
@@ -17,7 +64,7 @@ const ToggleSwitch: React.FC<{ isOn: boolean; onToggle: () => void }> = ({ isOn,
     className={`relative inline-flex items-center h-20 w-40 rounded-full transition-colors duration-300 focus:outline-none ${isOn ? 'bg-electric-blue-500' : 'bg-resonance-gray-700'}`}
   >
     <span
-      className={`absolute left-2 top-2 inline-block w-16 h-16 bg-white rounded-full transform transition-transform duration-300 ${isOn ? 'translate-x-20' : 'translate-x-0'}`}
+      className={`absolute left-2 top-2 inline-block w-16 h-16 bg-white rounded-full transform transition-transform duration-300 ${isOn ? 'translate-x-20' : 'translate-x-0'} ${isOn ? 'pulse-blue-glow' : ''}`}
     />
   </button>
 );
@@ -36,9 +83,22 @@ const Widget: React.FC<{ icon: React.ElementType, title: string, value: string }
     </div>
 );
 
-
 export default function DashboardScreen() {
   const [isAttunerOn, setIsAttunerOn] = useState(true);
+  const [consumption, setConsumption] = useState(2.3);
+
+  useEffect(() => {
+      if (!isAttunerOn) return;
+      const interval = setInterval(() => {
+          setConsumption(prev => {
+              const change = (Math.random() - 0.5) * 0.4;
+              const newConsumption = prev + change;
+              return Math.max(0.5, Math.min(newConsumption, 5.0));
+          });
+      }, 2000);
+      return () => clearInterval(interval);
+  }, [isAttunerOn]);
+
 
   return (
     <div className="p-6 space-y-8">
@@ -57,26 +117,8 @@ export default function DashboardScreen() {
       
       <section>
         <SectionHeader title="Live Consumption" />
-        <div className="bg-resonance-gray-800 p-4 rounded-2xl h-56 flex flex-col">
-            <div className="flex items-baseline space-x-2">
-                <span className="text-4xl font-bold text-electric-blue-400">2.3</span>
-                <span className="text-xl font-medium text-resonance-gray-500">kW</span>
-            </div>
-             <p className="text-sm text-resonance-gray-500">Real-time usage</p>
-            <div className="flex-grow">
-                <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={mockConsumptionData} margin={{ top: 20, right: 0, left: -20, bottom: 0 }}>
-                    <defs>
-                        <linearGradient id="colorUv" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#00A9FF" stopOpacity={0.4}/>
-                            <stop offset="95%" stopColor="#00A9FF" stopOpacity={0}/>
-                        </linearGradient>
-                    </defs>
-                    <Tooltip contentStyle={{ backgroundColor: '#2C2C2E', border: 'none', borderRadius: '10px' }} labelStyle={{ color: '#48484A' }} itemStyle={{ color: 'white' }}/>
-                    <Area type="monotone" dataKey="kW" stroke="#00A9FF" strokeWidth={2} fillOpacity={1} fill="url(#colorUv)" />
-                </AreaChart>
-                </ResponsiveContainer>
-            </div>
+        <div className="bg-resonance-gray-800 rounded-2xl">
+            <EnergyVisualizer consumption={consumption} isAttunerOn={isAttunerOn} />
         </div>
       </section>
 

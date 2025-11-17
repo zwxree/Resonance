@@ -10,6 +10,42 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+      @keyframes screen-fade-in {
+        from { opacity: 0; transform: scale(0.98); }
+        to { opacity: 1; transform: scale(1); }
+      }
+      .animate-screen-fade-in {
+        animation: screen-fade-in 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+      }
+      @keyframes pulse-blue {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(0, 169, 255, 0.7); }
+        70% { box-shadow: 0 0 0 20px rgba(0, 169, 255, 0); }
+      }
+      .pulse-blue-glow {
+        animation: pulse-blue 2.5s infinite;
+      }
+      @keyframes pulse-red-border {
+         0%, 100% { box-shadow: 0 0 0 0px #1C1C1E, 0 0 0 0px rgb(239 68 68 / 0.5); }
+         50% { box-shadow: 0 0 0 0px #1C1C1E, 0 0 0 4px rgb(239 68 68 / 0); }
+      }
+      .pulse-red-border {
+        animation: pulse-red-border 2s infinite;
+      }
+      @keyframes pulse-blue-subtle {
+        50% { opacity: 0.6; }
+      }
+       .pulse-blue-subtle {
+        animation: pulse-blue-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+      }
+      @keyframes light-up {
+        from { box-shadow: 0 0 0px #00A9FF; }
+        to { box-shadow: 0 0 15px #00A9FF, 0 0 30px #00A9FF; }
+      }
+      .light-up-once {
+          animation: light-up 0.3s ease-out;
+      }
+    </style>
     <script>
       tailwind.config = {
         theme: {
