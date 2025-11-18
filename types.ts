@@ -1,10 +1,10 @@
 
 export enum Tab {
-  Dashboard = 'dashboard',
+  Home = 'home',
   Devices = 'devices',
-  Attuner = 'attuner',
-  Usage = 'usage',
-  Store = 'store',
+  Hub = 'hub',
+  Stats = 'stats',
+  AI = 'ai',
 }
 
 export type Screen = { type: 'tab', tab: Tab };

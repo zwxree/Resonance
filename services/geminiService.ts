@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, Chat, Modality } from "@google/genai";
 
 const getGenAI = () => {
@@ -15,7 +16,7 @@ export const startChat = () => {
   chat = ai.chats.create({
     model: 'gemini-2.5-flash',
     config: {
-      systemInstruction: "You are a helpful assistant for Resonance Control, a premium energy management app. Answer questions concisely about the app's features and energy management."
+      systemInstruction: "You are a helpful assistant for Joule, a premium energy management app. Answer questions concisely about the app's features and energy management."
     }
   });
 };

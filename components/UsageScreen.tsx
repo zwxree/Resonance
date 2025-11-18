@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { analyzeWithThinkingMode, generateSpeech } from '../services/geminiService';
@@ -12,8 +11,8 @@ const dailyData = [
 ];
 
 const weeklyData = [
-    { name: 'Week 1', consumption: 158 }, { name: 'Week 2', consumption: 165 },
-    { name: 'Week 3', consumption: 172 }, { name: 'Week 4', consumption: 160 },
+    { name: 'W1', consumption: 158 }, { name: 'W2', consumption: 165 },
+    { name: 'W3', consumption: 172 }, { name: 'W4', consumption: 160 },
 ];
 
 const monthlyData = [
@@ -64,7 +63,7 @@ const useAudioPlayer = () => {
   return { playAudio, isPlaying };
 };
 
-export default function UsageScreen() {
+export default function StatsScreen() {
   const [activePeriod, setActivePeriod] = useState<Period>('Day');
   const [activeIndex, setActiveIndex] = useState(dailyData.length - 1);
   const [isLoadingAnalysis, setIsLoadingAnalysis] = useState(false);
@@ -99,33 +98,40 @@ export default function UsageScreen() {
 
 
   return (
-    <div className="p-6">
-      <h1 className="text-3xl font-bold mb-2">Consumption</h1>
-      <p className="text-resonance-gray-500 mb-8">Track your usage and billing.</p>
+    <div className="px-5 pt-12 pb-6">
+      <h1 className="text-4xl font-extrabold mb-2">Stats</h1>
+      <p className="text-apple-gray-300 mb-10">Your consumption overview.</p>
 
-      <div className="bg-resonance-gray-800 p-4 rounded-2xl">
-        <div className="flex justify-between items-center mb-4">
+      <div className="bg-apple-gray-600 p-4 rounded-2xl border border-white/10">
+        <div className="flex justify-between items-center mb-6 px-2">
           <div>
-            <p className="text-resonance-gray-500">{selectedData.name} Consumption</p>
+            <p className="text-apple-gray-300">{selectedData.name} Consumption</p>
             <p className="text-3xl font-bold text-white">{selectedData.consumption} <span className="text-xl">kWh</span></p>
           </div>
-          <div className="bg-resonance-gray-700 p-1 rounded-full flex items-center">
+          <div className="bg-apple-gray-500 p-1 rounded-full flex items-center">
             {(['Day', 'Week', 'Month'] as Period[]).map(period => (
-              <button key={period} onClick={() => { setActivePeriod(period); setActiveIndex(dataMap[period].length - 1)}} className={`px-3 py-1 text-sm font-semibold rounded-full ${activePeriod === period ? 'bg-electric-blue-500 text-white' : 'text-resonance-gray-500'}`}>
+              <button key={period} onClick={() => { setActivePeriod(period); setActiveIndex(dataMap[period].length - 1)}} className={`px-3 py-1 text-sm font-semibold rounded-full transition-colors duration-300 ${activePeriod === period ? 'bg-white text-black' : 'text-apple-gray-100 hover:text-white'}`}>
                 {period}
               </button>
             ))}
           </div>
         </div>
 
-        <div className="h-60">
+        <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={currentData} onClick={handleBarClick}>
-              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#48484A' }} />
-              <Tooltip cursor={{fill: '#2C2C2E'}} contentStyle={{ backgroundColor: '#1C1C1E', border: 'none', borderRadius: '10px' }}/>
-              <Bar dataKey="consumption" radius={[10, 10, 10, 10]}>
+            <BarChart data={currentData} onClick={handleBarClick} margin={{ top: 5, right: 0, left: -20, bottom: 5 }}>
+               <defs>
+                <linearGradient id="colorUv" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#00A9FF" stopOpacity={0.9}/>
+                  <stop offset="95%" stopColor="#00A9FF" stopOpacity={0.4}/>
+                </linearGradient>
+              </defs>
+              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#8E8E93', fontSize: 12 }} />
+              <YAxis axisLine={false} tickLine={false} tick={{ fill: '#8E8E93', fontSize: 12 }} />
+              <Tooltip cursor={{fill: 'rgba(255,255,255,0.05)'}} contentStyle={{ backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#fff' }}/>
+              <Bar dataKey="consumption" radius={[8, 8, 8, 8]}>
                 {currentData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={index === activeIndex ? '#00A9FF' : '#3A3A3C'} />
+                    <Cell key={`cell-${index}`} fill={index === activeIndex ? "url(#colorUv)" : '#3A3A3C'} />
                 ))}
               </Bar>
             </BarChart>
@@ -134,38 +140,38 @@ export default function UsageScreen() {
       </div>
       
       <div className="mt-6 grid grid-cols-2 gap-4">
-        <div className="bg-resonance-gray-800 p-4 rounded-2xl">
-          <p className="text-resonance-gray-500">Estimated Bill</p>
-          <div className="flex justify-between items-baseline">
+        <div className="bg-apple-gray-600/80 backdrop-blur-md p-4 rounded-2xl border border-white/10">
+          <p className="text-apple-gray-300">Estimated Bill</p>
+          <div className="flex justify-between items-baseline mt-2">
             <p className="text-3xl font-bold text-white">$128.50</p>
             <button onClick={handleReadSummary} disabled={isPlaying} className="text-electric-blue-500 hover:text-electric-blue-400 disabled:opacity-50">
                 <Volume2 size={24} />
             </button>
           </div>
         </div>
-        <button onClick={handleAnalyze} className="bg-resonance-gray-700 p-4 rounded-2xl flex flex-col justify-center items-center text-center hover:bg-resonance-gray-600 transition">
-          <Bot size={28} className="text-electric-blue-400 mb-2"/>
-          <p className="font-semibold text-white">AI Analysis</p>
-          <p className="text-xs text-resonance-gray-500">with Thinking Mode</p>
+        <button onClick={handleAnalyze} className="bg-apple-gray-600/80 backdrop-blur-md p-4 rounded-2xl flex flex-col justify-center items-center text-center hover:bg-apple-gray-500/80 transition-colors border border-white/10">
+          <Bot size={28} className="text-electric-blue-500 mb-2"/>
+          <p className="font-semibold text-white">Get Joule Insights</p>
+          <p className="text-xs text-apple-gray-300">with Thinking Mode</p>
         </button>
       </div>
 
       {isAnalysisModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
-          <div className="bg-resonance-gray-800 rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black bg-opacity-80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-screen-fade-in">
+          <div className="bg-apple-gray-600 rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto border border-white/10">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold">Consumption Analysis</h2>
-              <button onClick={() => setIsAnalysisModalOpen(false)} className="text-resonance-gray-500 hover:text-white">
+              <button onClick={() => setIsAnalysisModalOpen(false)} className="text-apple-gray-300 hover:text-white">
                 <X size={24} />
               </button>
             </div>
             {isLoadingAnalysis ? (
               <div className="flex flex-col items-center justify-center min-h-[200px]">
                 <ResonanceLoader />
-                <p className="mt-4 text-resonance-gray-500">Gemini is thinking...</p>
+                <p className="mt-4 text-apple-gray-300">Gemini is thinking...</p>
               </div>
             ) : (
-              <div className="prose prose-invert prose-p:text-resonance-gray-500 prose-headings:text-white prose-strong:text-electric-blue-400">
+              <div className="prose prose-invert prose-p:text-apple-gray-200 prose-headings:text-white prose-strong:text-electric-blue-500 prose-li:marker:text-electric-blue-500">
                 <div dangerouslySetInnerHTML={{ __html: analysisResult.replace(/\n/g, '<br />') }} />
               </div>
             )}

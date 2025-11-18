@@ -1,100 +1,101 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { Send, Bot, User, ArrowUp } from 'lucide-react';
+import { sendMessageToChat, startChat } from '../services/geminiService';
 
-import React from 'react';
-import { Zap, Users, Star } from 'lucide-react';
-import { Plan } from '../types';
+interface Message {
+  text: string;
+  sender: 'user' | 'bot';
+}
 
-const ProductCard: React.FC<{ imageUrl: string; name: string; price: string; description: string; }> = ({ imageUrl, name, price, description }) => (
-    <div className="bg-resonance-gray-800 rounded-3xl overflow-hidden">
-        <img src={imageUrl} alt={name} className="w-full h-48 object-cover" />
-        <div className="p-6">
-            <div className="flex justify-between items-baseline">
-                <h3 className="text-xl font-bold">{name}</h3>
-                <p className="text-lg font-semibold text-electric-blue-400">{price}</p>
-            </div>
-            <p className="text-resonance-gray-500 mt-2 mb-4">{description}</p>
-            <button className="w-full bg-electric-blue-500 text-white font-bold py-3 rounded-lg hover:bg-electric-blue-600 transition-colors">
-                Add to Cart
-            </button>
-        </div>
+const ResonanceLoader = () => (
+    <div className="flex space-x-1">
+        <div className="w-1.5 h-1.5 bg-white rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+        <div className="w-1.5 h-1.5 bg-white rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+        <div className="w-1.5 h-1.5 bg-white rounded-full animate-bounce"></div>
     </div>
 );
 
-const plans: Plan[] = [
-    { id: '1', name: 'Starter', price: '₹999/mo', kwhLimit: 300, features: ['Basic device support', 'Standard speed', 'Email support'], tier: 'basic' },
-    { id: '2', name: 'Family', price: '₹1,999/mo', kwhLimit: 800, features: ['Priority device support', 'Enhanced speed', '24/7 chat support'], tier: 'standard' },
-    { id: '3', name: 'Power User', price: '₹3,499/mo', kwhLimit: 2000, features: ['All devices priority', 'Maximum speed', 'Dedicated support line'], tier: 'premium' },
-];
+export default function AiScreen() {
+  const [messages, setMessages] = useState<Message[]>([
+    { text: "Hello! I'm Joule, your personal energy assistant. How can I help you today?", sender: 'bot' }
+  ]);
+  const [input, setInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-const PlanCard: React.FC<{ plan: Plan }> = ({ plan }) => {
-    const tierColors = {
-        basic: 'border-resonance-gray-700',
-        standard: 'border-electric-blue-500',
-        premium: 'border-yellow-400',
-    };
-    const tierIcons = { basic: Zap, standard: Users, premium: Star };
-    const Icon = tierIcons[plan.tier];
+  useEffect(() => {
+    startChat();
+    inputRef.current?.focus();
+  }, []);
 
-    return (
-        <div className={`bg-resonance-gray-800 p-6 rounded-3xl border-2 ${tierColors[plan.tier]} flex flex-col`}>
-             <div className="flex items-center space-x-3 mb-4">
-                <Icon className={`w-8 h-8 ${plan.tier === 'standard' ? 'text-electric-blue-400' : plan.tier === 'premium' ? 'text-yellow-400' : 'text-resonance-gray-500'}`} />
-                <div>
-                     <h3 className="text-2xl font-bold text-white">{plan.name}</h3>
-                     <p className="text-xl font-semibold text-electric-blue-400">{plan.price}</p>
-                </div>
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const handleSend = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim() || isLoading) return;
+
+    const userMessage: Message = { text: input, sender: 'user' };
+    setMessages(prev => [...prev, userMessage]);
+    setInput('');
+    setIsLoading(true);
+
+    const response = await sendMessageToChat(input);
+    const botMessage: Message = { text: response, sender: 'bot' };
+    setMessages(prev => [...prev, botMessage]);
+    setIsLoading(false);
+     setTimeout(() => inputRef.current?.focus(), 10);
+  };
+
+  return (
+    <div className="px-5 pt-12 pb-6 h-[calc(100vh-8rem)] flex flex-col">
+        <header className="mb-8 text-center">
+            <h1 className="text-4xl font-extrabold">Joule AI</h1>
+             <p className="text-apple-gray-300">Your personal energy assistant.</p>
+        </header>
+
+        <div className="flex-1 overflow-y-auto space-y-6 -mr-4 pr-4">
+          {messages.map((msg, index) => (
+            <div key={index} className={`flex items-start gap-3 ${msg.sender === 'user' ? 'justify-end' : ''}`}>
+              {msg.sender === 'bot' && <div className="w-8 h-8 rounded-full bg-apple-gray-500 flex items-center justify-center flex-shrink-0"><Bot size={20} className="text-electric-blue-500" /></div>}
+              <div className={`px-4 py-3 rounded-2xl max-w-xs md:max-w-sm text-lg ${msg.sender === 'user' ? 'bg-electric-blue-500 text-white' : 'bg-apple-gray-500 text-white'}`}>
+                {msg.text}
+              </div>
             </div>
-            <p className="text-resonance-gray-500 mb-6">{plan.kwhLimit} kWh included monthly</p>
-            <ul className="space-y-3 text-white flex-grow">
-                {plan.features.map((feature, i) => (
-                    <li key={i} className="flex items-center">
-                        <Star size={16} className="text-electric-blue-400 mr-3 flex-shrink-0" />
-                        <span>{feature}</span>
-                    </li>
-                ))}
-            </ul>
-            <button className={`w-full mt-8 font-bold py-3 rounded-lg transition-colors ${plan.tier === 'standard' ? 'bg-electric-blue-500 hover:bg-electric-blue-600 text-white' : 'bg-resonance-gray-700 hover:bg-resonance-gray-600 text-white'}`}>
-                Choose Plan
+          ))}
+           {isLoading && (
+              <div className="flex items-start gap-3">
+                 <div className="w-8 h-8 rounded-full bg-apple-gray-500 flex items-center justify-center flex-shrink-0"><Bot size={20} className="text-electric-blue-500" /></div>
+                 <div className="px-4 py-3 rounded-2xl bg-apple-gray-500 flex items-center justify-center">
+                     <ResonanceLoader />
+                 </div>
+              </div>
+           )}
+          <div ref={messagesEndRef} />
+        </div>
+        
+        <form onSubmit={handleSend} className="mt-6">
+          <div className="flex items-center bg-black/30 backdrop-blur-lg rounded-full border border-white/10 p-1.5 shadow-lg">
+            <input
+              ref={inputRef}
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Ask Joule..."
+              className="w-full bg-transparent p-3 text-white placeholder-apple-gray-300 focus:outline-none"
+              disabled={isLoading}
+            />
+            <button 
+              type="submit" 
+              className="w-10 h-10 flex items-center justify-center rounded-full transition-colors duration-200 disabled:bg-apple-gray-500 bg-electric-blue-500 text-white" 
+              disabled={isLoading || !input.trim()}
+            >
+              <ArrowUp size={24} />
             </button>
-        </div>
-    );
-}
-
-export default function StoreScreen() {
-    return (
-        <div className="p-6">
-            <h1 className="text-3xl font-bold mb-8">Store</h1>
-            <div className="space-y-10">
-                <section>
-                    <h2 className="text-2xl font-bold mb-4">Hardware</h2>
-                    <div className="space-y-8">
-                        <ProductCard 
-                            imageUrl="https://picsum.photos/seed/attuner/800/600"
-                            name="The Attuner"
-                            price="₹41,999"
-                            description="The central hub of your home's energy. Seamlessly power everything with unparalleled efficiency."
-                        />
-                        <ProductCard 
-                            imageUrl="https://picsum.photos/seed/chip/800/600"
-                            name="Resonance Chip"
-                            price="₹3,999"
-                            description="Retrofit any device to work with The Attuner. Smart, compact, and powerful short-range energy receivers."
-                        />
-                        <ProductCard 
-                            imageUrl="https://picsum.photos/seed/portable/800/600"
-                            name="Portable Attuner"
-                            price="₹66,999"
-                            description="Your personal energy source on the go. Perfect for remote work, camping, and emergencies."
-                        />
-                    </div>
-                </section>
-                
-                <section>
-                    <h2 className="text-2xl font-bold mb-4">Electricity Plans</h2>
-                    <div className="space-y-6">
-                        {plans.map(plan => <PlanCard key={plan.id} plan={plan} />)}
-                    </div>
-                </section>
-            </div>
-        </div>
-    );
+          </div>
+        </form>
+    </div>
+  );
 }
