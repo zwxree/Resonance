@@ -26,11 +26,10 @@ export interface UsageData {
   consumption: number;
 }
 
-export interface Plan {
-    id: string;
-    name: string;
-    price: string;
-    kwhLimit: number;
-    features: string[];
-    tier: 'basic' | 'standard' | 'premium';
+export interface Bill {
+    amount: number;
+    currency: string;
+    dueDate: string;
+    status: 'paid' | 'unpaid';
+    kwhUsed: number;
 }

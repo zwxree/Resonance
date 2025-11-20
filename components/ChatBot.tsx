@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Send, Bot, User } from 'lucide-react';
 import { sendMessageToChat, startChat } from '../services/geminiService';
@@ -18,7 +17,7 @@ const ResonanceLoader = () => (
 
 export default function ChatBot({ onClose }: { onClose: () => void }) {
   const [messages, setMessages] = useState<Message[]>([
-    { text: "Hello! I'm the Joule assistant. How can I help you manage your energy today?", sender: 'bot' }
+    { text: "Hello! I'm the Aetherkraft assistant. How can I help you manage your energy today?", sender: 'bot' }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -42,7 +41,8 @@ export default function ChatBot({ onClose }: { onClose: () => void }) {
     setIsLoading(true);
 
     const response = await sendMessageToChat(input);
-    const botMessage: Message = { text: response, sender: 'bot' };
+    // ChatBot currently doesn't support grounding UI, just text.
+    const botMessage: Message = { text: response.text, sender: 'bot' };
     setMessages(prev => [...prev, botMessage]);
     setIsLoading(false);
   };
@@ -53,7 +53,7 @@ export default function ChatBot({ onClose }: { onClose: () => void }) {
         <header className="flex items-center justify-between p-4 border-b border-white/10">
           <div className="flex items-center space-x-2">
             <Bot className="text-electric-blue-500" />
-            <h2 className="text-lg font-bold">Joule AI</h2>
+            <h2 className="text-lg font-bold">Aetherkraft AI</h2>
           </div>
           <button onClick={onClose} className="text-apple-gray-300 hover:text-white">
             <X size={24} />

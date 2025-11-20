@@ -1,144 +1,123 @@
+
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Joule</title>
+    <title>Aetherkraft</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-      @keyframes screen-fade-in {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0px); }
+      /* Apple-like system font stack */
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       }
-      .animate-screen-fade-in {
-        animation: screen-fade-in 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+
+      /* Soft Pinterest-like fade up */
+      @keyframes fade-up {
+        from { opacity: 0; transform: translateY(20px) scale(0.98); }
+        to { opacity: 1; transform: translateY(0px) scale(1); }
       }
-      @keyframes pulse-red-border {
-         0%, 100% { box-shadow: 0 0 0 0px #1C1C1E, 0 0 0 0px rgb(239 68 68 / 0.7); }
-         50% { box-shadow: 0 0 0 0px #1C1C1E, 0 0 0 5px rgb(239 68 68 / 0); }
-      }
-      .pulse-red-border {
-        animation: pulse-red-border 2s infinite;
-      }
-      @keyframes pulse-blue-subtle {
-        50% { opacity: 0.6; }
-      }
-       .pulse-blue-subtle {
-        animation: pulse-blue-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-      }
-      @keyframes light-up {
-        from { filter: drop-shadow(0 0 0px #00A9FF); }
-        to { filter: drop-shadow(0 0 8px #00A9FF); }
-      }
-      .light-up-once {
-          animation: light-up 0.4s ease-out;
-      }
-      @keyframes blink {
-        50% { opacity: 0.2; }
-      }
-      .animate-blink {
-        animation: blink 1.5s step-start infinite;
+      .animate-fade-up {
+        animation: fade-up 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
       }
       
+      /* Alert Pulse */
+      @keyframes soft-pulse-red {
+         0% { box-shadow: 0 0 0 0px rgba(239, 68, 68, 0); }
+         50% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0.15); }
+         100% { box-shadow: 0 0 0 0px rgba(239, 68, 68, 0); }
+      }
+      .animate-soft-pulse-red {
+        animation: soft-pulse-red 2s infinite;
+      }
+
+      /* UI Elements */
       .toggle-switch {
         -webkit-appearance: none;
         appearance: none;
-        width: 52px;
-        height: 32px;
-        background-color: #3A3A3C;
+        width: 50px;
+        height: 30px;
+        background-color: #E5E5EA; /* Apple gray light */
         border-radius: 9999px;
         position: relative;
         cursor: pointer;
-        transition: background-color 0.2s ease-in-out;
+        transition: background-color 0.3s ease;
+      }
+      .dark .toggle-switch {
+        background-color: #3A3A3C; /* Apple gray dark */
       }
       .toggle-switch::before {
         content: '';
         position: absolute;
-        width: 28px;
-        height: 28px;
+        width: 26px;
+        height: 26px;
         background-color: white;
         border-radius: 9999px;
         top: 2px;
         left: 2px;
-        transition: transform 0.2s ease-in-out;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
       }
       .toggle-switch:checked {
-        background-color: #00A9FF;
+        background-color: #34C759; /* Apple Green */
       }
       .toggle-switch:checked::before {
         transform: translateX(20px);
       }
 
-      /* Custom Range Slider Styles */
-      .range-slider {
-        -webkit-appearance: none;
-        appearance: none;
-        width: 100%;
-        height: 8px;
-        background: #3A3A3C;
-        border-radius: 9999px;
-        outline: none;
-        padding: 0;
-        margin: 0;
-        cursor: pointer;
+      .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+      }
+      .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
       }
 
-      .range-slider::-webkit-slider-thumb {
-        -webkit-appearance: none;
-        appearance: none;
-        width: 24px;
-        height: 24px;
-        background: #fff;
-        border-radius: 50%;
-        cursor: pointer;
-        margin-top: -8px; /* (thumb height - track height) / 2 */
-        box-shadow: 0 0 0 4px #000, 0 0 0 6px #48484A;
-        transition: transform 0.2s ease;
+      /* Masonry & Layout utilities */
+      .masonry-grid {
+        column-count: 2;
+        column-gap: 16px;
       }
-       .range-slider:active::-webkit-slider-thumb {
-        transform: scale(1.1);
-      }
-
-      .range-slider::-moz-range-thumb {
-        width: 24px;
-        height: 24px;
-        background: #fff;
-        border-radius: 50%;
-        cursor: pointer;
-        border: none;
-        box-shadow: 0 0 0 4px #000, 0 0 0 6px #48484A;
-        transition: transform 0.2s ease;
-      }
-       .range-slider:active::-moz-range-thumb {
-        transform: scale(1.1);
+      .masonry-item {
+        break-inside: avoid;
+        margin-bottom: 16px;
       }
     </style>
     <script>
       tailwind.config = {
+        darkMode: 'class',
         theme: {
           extend: {
-            fontFamily: {
-              sans: ['Manrope', 'sans-serif'],
-            },
             colors: {
-              'electric-blue': {
-                '500': '#00A9FF',
-                '600': '#0087CC',
+              // Apple-inspired system colors
+              ios: {
+                bg: '#F2F2F7',
+                card: '#FFFFFF',
+                text: '#000000',
+                subtext: '#8E8E93',
+                blue: '#007AFF',
               },
+              dark: {
+                bg: '#000000',
+                card: '#1C1C1E',
+                text: '#FFFFFF',
+                subtext: '#98989D',
+              },
+              // Specific palettes used in components
               'apple-gray': {
-                '100': '#E5E5EA',
-                '200': '#D1D1D6',
-                '300': '#8E8E93',
-                '400': '#3A3A3C',
-                '500': '#2C2C2E',
-                '600': '#1C1C1E',
-                '700': '#121212',
+                 300: '#C7C7CC',
+                 400: '#AEAEB2',
+                 500: '#8E8E93',
+                 600: '#2C2C2E', // Dark gray for secondary cards
               },
+              'electric-blue': {
+                 500: '#007AFF',
+                 600: '#0051A8',
+              }
+            },
+            borderRadius: {
+              '4xl': '32px',
             }
           }
         }
@@ -157,7 +136,7 @@
 }
 </script>
 </head>
-  <body class="bg-apple-gray-700">
+  <body class="bg-ios-bg dark:bg-dark-bg text-ios-text dark:text-dark-text transition-colors duration-500 antialiased selection:bg-blue-500 selection:text-white">
     <div id="root"></div>
   </body>
 </html>

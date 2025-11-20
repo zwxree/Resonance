@@ -125,7 +125,7 @@ const InfoCard: React.FC<{ icon: React.ElementType, title: string, value: string
 export default function HubScreen() {
     return (
         <div className="px-5 pt-12 pb-6">
-            <h1 className="text-4xl font-extrabold mb-2">Hub Control</h1>
+            <h1 className="text-4xl font-extrabold mb-2">Aetherkraft Hub</h1>
             <p className="text-apple-gray-300 mb-10">Fine-tune your home's energy core.</p>
             <div className="space-y-6">
                 <ControlSlider 

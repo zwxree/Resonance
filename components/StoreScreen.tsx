@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Bot, User, ArrowUp } from 'lucide-react';
+import { Send, Bot, User, ArrowUp, MapPin, Globe } from 'lucide-react';
 import { sendMessageToChat, startChat } from '../services/geminiService';
 
 interface Message {
   text: string;
   sender: 'user' | 'bot';
+  groundingChunks?: any[];
 }
 
 const ResonanceLoader = () => (
@@ -17,7 +18,7 @@ const ResonanceLoader = () => (
 
 export default function AiScreen() {
   const [messages, setMessages] = useState<Message[]>([
-    { text: "Hello! I'm Joule, your personal energy assistant. How can I help you today?", sender: 'bot' }
+    { text: "Hello! I'm Aetherkraft AI, your personal energy assistant. How can I help you today?", sender: 'bot' }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -25,7 +26,21 @@ export default function AiScreen() {
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    startChat();
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                startChat({
+                    lat: position.coords.latitude,
+                    lng: position.coords.longitude
+                });
+            },
+            () => {
+                startChat(); // Permission denied or error
+            }
+        );
+    } else {
+        startChat();
+    }
     inputRef.current?.focus();
   }, []);
 
@@ -43,16 +58,63 @@ export default function AiScreen() {
     setIsLoading(true);
 
     const response = await sendMessageToChat(input);
-    const botMessage: Message = { text: response, sender: 'bot' };
+    
+    const groundingChunks = response.groundingMetadata?.groundingChunks;
+    
+    const botMessage: Message = { 
+        text: response.text, 
+        sender: 'bot',
+        groundingChunks
+    };
     setMessages(prev => [...prev, botMessage]);
     setIsLoading(false);
      setTimeout(() => inputRef.current?.focus(), 10);
   };
 
+  const renderGroundingSources = (chunks: any[]) => {
+      if (!chunks || chunks.length === 0) return null;
+
+      const sources = chunks.reduce((acc: any[], chunk: any) => {
+          if (chunk.web) {
+              acc.push({ type: 'web', ...chunk.web });
+          } else if (chunk.maps) { // Assuming structure, though prompt says maps.uri usually implies it's in chunks
+             // Maps usually provides inline snippets but let's try to link
+             // Based on guidelines: groundingChunks.maps.uri and groundingChunks.maps.placeAnswerSources.reviewSnippets
+             // But typical structure is chunk.web or similar. The guidelines example for maps just logs chunks.
+             // I will optimistically parse generic structure or specific maps props.
+             // The prompt example: [{"maps": {"uri": "", "title": ""}, ... }]
+             acc.push({ type: 'maps', ...chunk.maps });
+          }
+          return acc;
+      }, []);
+
+      if (sources.length === 0) return null;
+
+      return (
+          <div className="mt-3 pt-3 border-t border-white/10 text-xs">
+              <p className="text-apple-gray-300 mb-1.5 font-semibold">Sources:</p>
+              <div className="flex flex-wrap gap-2">
+                  {sources.map((source: any, i: number) => (
+                      <a 
+                        key={i} 
+                        href={source.uri} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="flex items-center bg-black/20 hover:bg-black/40 text-electric-blue-500 px-2 py-1 rounded-md transition-colors"
+                      >
+                          {source.type === 'maps' ? <MapPin size={10} className="mr-1"/> : <Globe size={10} className="mr-1"/>}
+                          <span className="truncate max-w-[150px]">{source.title || 'Link'}</span>
+                      </a>
+                  ))}
+              </div>
+          </div>
+      )
+  }
+
   return (
     <div className="px-5 pt-12 pb-6 h-[calc(100vh-8rem)] flex flex-col">
         <header className="mb-8 text-center">
-            <h1 className="text-4xl font-extrabold">Joule AI</h1>
+            <h1 className="text-4xl font-extrabold">Aetherkraft AI</h1>
              <p className="text-apple-gray-300">Your personal energy assistant.</p>
         </header>
 
@@ -62,6 +124,7 @@ export default function AiScreen() {
               {msg.sender === 'bot' && <div className="w-8 h-8 rounded-full bg-apple-gray-500 flex items-center justify-center flex-shrink-0"><Bot size={20} className="text-electric-blue-500" /></div>}
               <div className={`px-4 py-3 rounded-2xl max-w-xs md:max-w-sm text-lg ${msg.sender === 'user' ? 'bg-electric-blue-500 text-white' : 'bg-apple-gray-500 text-white'}`}>
                 {msg.text}
+                {msg.groundingChunks && renderGroundingSources(msg.groundingChunks)}
               </div>
             </div>
           ))}
@@ -83,7 +146,7 @@ export default function AiScreen() {
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask Joule..."
+              placeholder="Ask Aetherkraft..."
               className="w-full bg-transparent p-3 text-white placeholder-apple-gray-300 focus:outline-none"
               disabled={isLoading}
             />

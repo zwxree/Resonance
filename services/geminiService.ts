@@ -11,72 +11,127 @@ const getGenAI = () => {
 // --- CHATBOT ---
 let chat: Chat | null = null;
 
-export const startChat = () => {
+interface ChatLocation {
+  lat: number;
+  lng: number;
+}
+
+interface ChatResponse {
+  text: string;
+  groundingMetadata?: any;
+}
+
+export const startChat = (location?: ChatLocation) => {
   const ai = getGenAI();
+  const tools: any[] = [{ googleSearch: {} }, { googleMaps: {} }];
+  let toolConfig: any = undefined;
+
+  if (location) {
+      toolConfig = {
+          retrievalConfig: {
+              latLng: {
+                  latitude: location.lat,
+                  longitude: location.lng
+              }
+          }
+      };
+  }
+
   chat = ai.chats.create({
     model: 'gemini-2.5-flash',
     config: {
-      systemInstruction: "You are a helpful assistant for Joule, a premium energy management app. Answer questions concisely about the app's features and energy management."
+      systemInstruction: "You are Aetherkraft AI. Concise, helpful, premium tone. Use Google Maps for location queries.",
+      tools,
+      toolConfig
     }
   });
 };
 
-export const sendMessageToChat = async (message: string): Promise<string> => {
+export const sendMessageToChat = async (message: string, location?: ChatLocation): Promise<ChatResponse> => {
   if (!chat) {
-    startChat();
+    startChat(location);
   }
   try {
-    const result = await chat!.sendMessage(message);
-    return result.text;
+    const result = await chat!.sendMessage({ message });
+    return {
+        text: result.text || "",
+        groundingMetadata: result.candidates?.[0]?.groundingMetadata
+    };
   } catch (error) {
     console.error("Error sending message to Gemini:", error);
-    return "I'm sorry, I'm having trouble connecting right now. Please try again later.";
+    return { text: "Connection disrupted. Please try again." };
   }
 };
+
+// --- SERVICE CENTRE SEARCH ---
+export const findServiceCentres = async (): Promise<string> => {
+    try {
+        const ai = getGenAI();
+        // Retrieve user location if possible, else default to general query
+        let lat = 37.7749;
+        let lng = -122.4194;
+        
+        if (navigator.geolocation) {
+             await new Promise<void>((resolve) => {
+                navigator.geolocation.getCurrentPosition((pos) => {
+                    lat = pos.coords.latitude;
+                    lng = pos.coords.longitude;
+                    resolve();
+                }, () => resolve());
+             });
+        }
+
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: "Find the nearest 3 electronics repair or energy service centers near me. List them with address and rating.",
+            config: {
+                tools: [{ googleMaps: {} }],
+                toolConfig: {
+                    retrievalConfig: {
+                        latLng: { latitude: lat, longitude: lng }
+                    }
+                }
+            }
+        });
+        return response.text || "No centers found nearby.";
+    } catch (error) {
+        console.error("Maps error", error);
+        return "Unable to search maps at this moment.";
+    }
+}
+
+
+// --- FAST RESPONSE (Flash Lite) ---
+export const getQuickEnergyTip = async (): Promise<string> => {
+    try {
+        const ai = getGenAI();
+        const response = await ai.models.generateContent({
+            model: "gemini-flash-lite-latest",
+            contents: "One very short, clever energy saving tip.",
+        });
+        return response.text || "Turn off the lights!";
+    } catch (error) {
+        return "Save energy, save money.";
+    }
+}
 
 // --- THINKING MODE ---
 export const analyzeWithThinkingMode = async (prompt: string): Promise<string> => {
     try {
         const ai = getGenAI();
         const response = await ai.models.generateContent({
-            model: "gemini-2.5-pro",
+            model: "gemini-3-pro-preview",
             contents: prompt,
             config: {
                 thinkingConfig: { thinkingBudget: 32768 }
             }
         });
-        return response.text;
+        return response.text || "";
     } catch (error) {
-        console.error("Error with Thinking Mode:", error);
-        return "An error occurred while analyzing the data. Please try again.";
+        return "Analysis failed.";
     }
 };
 
-// --- TTS ---
-export const generateSpeech = async (text: string): Promise<string | null> => {
-    try {
-        const ai = getGenAI();
-        const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash-preview-tts",
-            contents: [{ parts: [{ text: `Say with a calm and clear voice: ${text}` }] }],
-            config: {
-                responseModalities: [Modality.AUDIO],
-                speechConfig: {
-                    voiceConfig: {
-                        prebuiltVoiceConfig: { voiceName: 'Kore' },
-                    },
-                },
-            },
-        });
-        const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-        return base64Audio || null;
-    } catch (error) {
-        console.error("Error generating speech:", error);
-        return null;
-    }
-};
-
-// Fix: Add and export the missing 'editImageWithNanoBanana' function.
 // --- IMAGE EDITING ---
 export const editImageWithNanoBanana = async (prompt: string, base64ImageData: string, mimeType: string): Promise<string | null> => {
     try {
@@ -85,28 +140,17 @@ export const editImageWithNanoBanana = async (prompt: string, base64ImageData: s
             model: 'gemini-2.5-flash-image',
             contents: {
                 parts: [
-                    {
-                        inlineData: {
-                            data: base64ImageData,
-                            mimeType: mimeType,
-                        },
-                    },
-                    {
-                        text: prompt,
-                    },
+                    { inlineData: { data: base64ImageData, mimeType: mimeType } },
+                    { text: prompt },
                 ],
             },
-            config: {
-                responseModalities: [Modality.IMAGE],
-            },
+            config: { responseModalities: [Modality.IMAGE] },
         });
 
         const parts = response.candidates?.[0]?.content?.parts;
         if (parts) {
             for (const part of parts) {
-                if (part.inlineData) {
-                    return part.inlineData.data;
-                }
+                if (part.inlineData) return part.inlineData.data;
             }
         }
         return null;

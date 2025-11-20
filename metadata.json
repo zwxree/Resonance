@@ -1,5 +1,7 @@
 {
-  "name": "Joule",
-  "description": "Joule is a beautifully simple app to manage your home energy. Monitor usage, control devices, and get smart insights from our friendly AI, all in a sleek, minimal interface.",
-  "requestFramePermissions": []
+  "name": "Aetherkraft",
+  "description": "Aetherkraft is a beautifully simple app to manage your home energy. Monitor usage, control devices, and get smart insights from our friendly AI, all in a sleek, minimal interface.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
 }

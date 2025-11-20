@@ -1,94 +1,228 @@
 
-import React, { useState, useCallback } from 'react';
-import { Home, Zap, Cpu, BarChart3, Bot } from 'lucide-react';
+import React, { useState, useCallback, createContext, useContext, useEffect } from 'react';
+import { Home, Zap, Cpu, BarChart3, Bot, LogOut, Moon, Sun, MapPin, Plus, User } from 'lucide-react';
 import HomeScreen from './components/DashboardScreen';
 import DevicesScreen from './components/DevicesScreen';
 import HubScreen from './components/AttunerScreen';
 import StatsScreen from './components/UsageScreen';
 import AiScreen from './components/StoreScreen';
 import { Tab, Screen } from './types';
+import { findServiceCentres } from './services/geminiService';
+
+// --- Theme Context ---
+type Theme = 'light' | 'dark';
+interface AppContextType {
+  theme: Theme;
+  toggleTheme: () => void;
+  user: { name: string; email: string; avatar: string } | null;
+  logout: () => void;
+  registerChip: (id: string) => void;
+}
+
+export const AppContext = createContext<AppContextType>({
+  theme: 'light',
+  toggleTheme: () => {},
+  user: null,
+  logout: () => {},
+  registerChip: () => {},
+});
+
+// --- Auth Screen ---
+const LoginScreen: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
+  const [isRegistering, setIsRegistering] = useState(false);
+  
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center p-8 relative overflow-hidden bg-ios-bg dark:bg-black">
+       <div className="absolute inset-0 bg-gradient-to-br from-blue-400/20 via-purple-400/20 to-orange-400/20 blur-3xl opacity-50"></div>
+       <div className="z-10 w-full max-w-sm text-center animate-fade-up">
+          <div className="w-28 h-28 mx-auto mb-8 flex items-center justify-center shadow-2xl rounded-[28px] overflow-hidden bg-white dark:bg-black">
+            <img src="1.jpg" alt="Aetherkraft Logo" className="w-full h-full object-cover" />
+          </div>
+          <h1 className="text-3xl font-semibold mb-2 tracking-tight text-black dark:text-white">Aetherkraft</h1>
+          <p className="text-gray-500 dark:text-gray-400 mb-10 font-medium">Energy, reimagined.</p>
+          
+          <div className="space-y-4">
+             <input type="email" placeholder="Email" className="w-full p-4 rounded-2xl bg-white dark:bg-white/10 border border-gray-200 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-black dark:text-white placeholder-gray-400" />
+             <input type="password" placeholder="Password" className="w-full p-4 rounded-2xl bg-white dark:bg-white/10 border border-gray-200 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-black dark:text-white placeholder-gray-400" />
+             
+             <button onClick={onLogin} className="w-full py-4 rounded-2xl bg-black dark:bg-white text-white dark:text-black font-bold text-lg shadow-lg hover:scale-[1.02] transition-transform">
+                {isRegistering ? 'Create Account' : 'Sign In'}
+             </button>
+          </div>
+          
+          <button onClick={() => setIsRegistering(!isRegistering)} className="mt-8 text-sm text-gray-500 font-medium hover:text-black dark:hover:text-white transition-colors">
+            {isRegistering ? 'Already have an account? Log in' : 'Create new account'}
+          </button>
+       </div>
+    </div>
+  )
+}
+
+// --- Settings Modal ---
+const SettingsModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, onClose }) => {
+    const { theme, toggleTheme, logout, registerChip } = useContext(AppContext);
+    const [loadingCenters, setLoadingCenters] = useState(false);
+    const [centers, setCenters] = useState<string[]>([]);
+    const [chipId, setChipId] = useState('');
+
+    const handleFindCenters = async () => {
+        setLoadingCenters(true);
+        const results = await findServiceCentres();
+        setCenters(results ? [results] : ["No centers found nearby."]);
+        setLoadingCenters(false);
+    }
+
+    const handleRegister = (e: React.FormEvent) => {
+        e.preventDefault();
+        registerChip(chipId);
+        setChipId('');
+        alert("Chip registered successfully!");
+    }
+
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 z-50 bg-black/20 dark:bg-black/60 backdrop-blur-md flex items-end sm:items-center justify-center sm:p-4">
+            <div className="bg-white dark:bg-dark-card w-full sm:max-w-md h-[85vh] sm:h-auto sm:rounded-[32px] rounded-t-[32px] p-6 overflow-y-auto shadow-2xl animate-fade-up text-black dark:text-white">
+                <div className="flex justify-between items-center mb-8">
+                    <h2 className="text-2xl font-bold">Settings</h2>
+                    <button onClick={onClose} className="p-2 bg-gray-100 dark:bg-white/10 rounded-full hover:bg-gray-200 dark:hover:bg-white/20"><Plus className="rotate-45" /></button>
+                </div>
+
+                <div className="space-y-8">
+                    {/* Theme */}
+                    <div className="flex items-center justify-between p-4 border border-gray-100 dark:border-white/10 rounded-2xl">
+                        <div className="flex items-center gap-3">
+                            {theme === 'light' ? <Sun size={20} /> : <Moon size={20} />}
+                            <span className="font-semibold">Appearance</span>
+                        </div>
+                        <button onClick={toggleTheme} className="px-4 py-2 bg-gray-100 dark:bg-white/10 rounded-full text-sm font-bold hover:bg-gray-200 dark:hover:bg-white/20 transition-colors">
+                            {theme === 'light' ? 'Light' : 'Dark'}
+                        </button>
+                    </div>
+
+                    {/* Register Chip */}
+                    <div>
+                        <h3 className="font-bold mb-3 text-xs text-gray-500 uppercase tracking-wide">Hardware</h3>
+                        <form onSubmit={handleRegister} className="flex gap-2">
+                            <input 
+                                value={chipId}
+                                onChange={(e) => setChipId(e.target.value)}
+                                placeholder="Enter Chip ID" 
+                                className="flex-1 bg-gray-100 dark:bg-white/5 p-3 rounded-xl focus:outline-none text-black dark:text-white placeholder-gray-400"
+                            />
+                            <button type="submit" className="bg-black dark:bg-white text-white dark:text-black px-4 rounded-xl font-bold text-sm">Add</button>
+                        </form>
+                    </div>
+
+                    {/* Service Centers */}
+                    <div>
+                        <h3 className="font-bold mb-3 text-xs text-gray-500 uppercase tracking-wide">Support</h3>
+                        <button 
+                            onClick={handleFindCenters}
+                            disabled={loadingCenters}
+                            className="w-full flex items-center justify-between p-4 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-2xl font-bold mb-4 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
+                        >
+                            <div className="flex items-center gap-2"><MapPin size={18}/> Find Service Centres</div>
+                            {loadingCenters && <div className="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full"></div>}
+                        </button>
+                        {centers.length > 0 && (
+                            <div className="bg-gray-50 dark:bg-white/5 p-4 rounded-2xl text-sm text-gray-600 dark:text-gray-300 whitespace-pre-line">
+                                {centers[0]}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Account */}
+                    <button onClick={logout} className="w-full py-4 text-red-500 font-bold bg-red-50 dark:bg-red-900/10 rounded-2xl flex items-center justify-center gap-2 hover:bg-red-100 dark:hover:bg-red-900/20 transition-colors">
+                        <LogOut size={18} /> Log Out
+                    </button>
+                </div>
+            </div>
+        </div>
+    )
+}
 
 const TabBar: React.FC<{ activeTab: Tab; onTabChange: (tab: Tab) => void }> = ({ activeTab, onTabChange }) => {
   const tabs: { id: Tab; icon: React.ElementType; label: string }[] = [
-    { id: Tab.Home, icon: Home, label: 'Home' },
-    { id: Tab.Devices, icon: Zap, label: 'Devices' },
-    { id: Tab.Hub, icon: Cpu, label: 'Hub' },
-    { id: Tab.Stats, icon: BarChart3, label: 'Stats' },
-    { id: Tab.AI, icon: Bot, label: 'AI' },
+    { id: Tab.Home, icon: Home, label: '' },
+    { id: Tab.Devices, icon: Zap, label: '' },
+    { id: Tab.Hub, icon: Cpu, label: '' },
+    { id: Tab.Stats, icon: BarChart3, label: '' },
+    { id: Tab.AI, icon: Bot, label: '' },
   ];
-  const activeIndex = tabs.findIndex(t => t.id === activeTab);
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50">
-      <div className="max-w-md mx-auto p-4">
-        <div className="relative bg-black/50 backdrop-blur-xl border border-white/10 rounded-full flex justify-around items-center h-20 shadow-2xl shadow-black/50">
-          {/* FIX: The `Icon` component was not defined. It must be dynamically set to the `icon` property of the `tab` object being iterated over. It must also be capitalized to be used as a JSX component. */}
-          {tabs.map((tab, index) => {
+    <div className="fixed bottom-8 left-0 right-0 z-40 flex justify-center pointer-events-none">
+      <div className="bg-white/80 dark:bg-[#1C1C1E]/80 backdrop-blur-xl border border-gray-200 dark:border-white/10 rounded-full px-6 py-3 shadow-2xl pointer-events-auto flex gap-6 items-center">
+          {tabs.map((tab) => {
             const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
             return (
               <button
                 key={tab.id}
                 onClick={() => onTabChange(tab.id)}
-                className="relative flex-1 flex flex-col items-center justify-center h-full transition-colors duration-300 z-10"
+                className={`relative p-3 transition-all duration-300 rounded-full group ${isActive ? 'bg-black dark:bg-white text-white dark:text-black' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'}`}
                 aria-label={tab.label}
-                aria-current={activeTab === tab.id}
               >
-                <Icon size={24} strokeWidth={2.5} className={`transition-transform duration-300 ${activeTab === tab.id ? 'text-white scale-110' : 'text-apple-gray-300'}`} />
-                <span className={`text-[10px] mt-1 font-bold transition-opacity duration-300 ${activeTab === tab.id ? 'text-white opacity-100' : 'text-apple-gray-300 opacity-80'}`}>
-                  {tab.label}
-                </span>
+                <Icon size={24} strokeWidth={isActive ? 2.5 : 2} />
               </button>
             );
           })}
-          <div
-            className="absolute top-1/2 -translate-y-1/2 left-0 h-16 w-[calc(20%-0.4rem)] mx-[0.2rem] bg-electric-blue-500/80 rounded-full transition-transform duration-500 ease-[cubic-bezier(0.25,1,0.5,1)]"
-            style={{ transform: `translateX(${activeIndex * 100}%)` }}
-          />
-        </div>
       </div>
     </div>
   );
 };
 
 export default function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [theme, setTheme] = useState<Theme>('light'); 
   const [activeTab, setActiveTab] = useState<Tab>(Tab.Home);
-  const [activeScreen, setActiveScreen] = useState<Screen>({ type: 'tab', tab: Tab.Home });
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  // UPDATED USER: Name ADMIN, Avatar 2.jpg
+  const [user] = useState({ name: "ADMIN", email: "admin@aether.com", avatar: "2.jpg" });
 
-  const handleTabChange = useCallback((tab: Tab) => {
-    setActiveTab(tab);
-    setActiveScreen({ type: 'tab', tab });
-  }, []);
+  useEffect(() => {
+      if (theme === 'dark') {
+          document.documentElement.classList.add('dark');
+      } else {
+          document.documentElement.classList.remove('dark');
+      }
+  }, [theme]);
+
+  const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
+  const logout = () => setIsAuthenticated(false);
+  const registerChip = (id: string) => console.log("Registered", id);
 
   const renderScreen = () => {
-    // The key prop is crucial here to make React re-mount the component on tab change, which triggers the animation.
-    const screenComponent = () => {
-        if (activeScreen.type === 'tab') {
-          switch (activeScreen.tab) {
-            case Tab.Home:
-              return <HomeScreen />;
-            case Tab.Devices:
-              return <DevicesScreen />;
-            case Tab.Hub:
-              return <HubScreen />;
-            case Tab.Stats:
-              return <StatsScreen />;
-            case Tab.AI:
-              return <AiScreen />;
-            default:
-              return <HomeScreen />;
-          }
+     const screen = () => {
+        switch (activeTab) {
+            case Tab.Home: return <HomeScreen openSettings={() => setIsSettingsOpen(true)} />;
+            case Tab.Devices: return <DevicesScreen />;
+            case Tab.Hub: return <HubScreen />;
+            case Tab.Stats: return <StatsScreen />;
+            case Tab.AI: return <AiScreen />;
+            default: return <HomeScreen openSettings={() => setIsSettingsOpen(true)} />;
         }
-        return null;
-    }
-    return <div key={activeTab} className="animate-screen-fade-in">{screenComponent()}</div>
+     }
+     return <div key={activeTab} className="animate-fade-up pb-32">{screen()}</div>
   };
 
+  if (!isAuthenticated) return (
+      <AppContext.Provider value={{ theme, toggleTheme, user: null, logout, registerChip }}>
+        <LoginScreen onLogin={() => setIsAuthenticated(true)} />
+      </AppContext.Provider>
+  );
+
   return (
-    <div className="bg-apple-gray-700 text-white min-h-screen font-sans">
-      <main className="max-w-md mx-auto pb-32">
-        {renderScreen()}
-      </main>
-      <TabBar activeTab={activeTab} onTabChange={handleTabChange} />
-    </div>
+    <AppContext.Provider value={{ theme, toggleTheme, user, logout, registerChip }}>
+        <div className="min-h-screen selection:bg-blue-500 selection:text-white bg-ios-bg dark:bg-black text-ios-text dark:text-dark-text">
+        <main className="max-w-lg mx-auto min-h-screen relative">
+            {renderScreen()}
+        </main>
+        <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
+        <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
+        </div>
+    </AppContext.Provider>
   );
 }
