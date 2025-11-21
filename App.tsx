@@ -1,6 +1,6 @@
 
 import React, { useState, useCallback, createContext, useContext, useEffect } from 'react';
-import { Home, Zap, Cpu, BarChart3, Bot, LogOut, Moon, Sun, MapPin, Plus, WifiOff } from 'lucide-react';
+import { Home, Zap, Cpu, BarChart3, Bot, LogOut, Moon, Sun, MapPin, Plus, WifiOff, Camera, Upload } from 'lucide-react';
 import HomeScreen from './components/DashboardScreen';
 import DevicesScreen from './components/DevicesScreen';
 import HubScreen from './components/AttunerScreen';
@@ -9,28 +9,37 @@ import AiScreen from './components/StoreScreen';
 import { Tab, Screen } from './types';
 import { findServiceCentres } from './services/geminiService';
 
+// --- CONFIGURATION: CHANGE IMAGES HERE ---
+// You can replace these URLs with any external link (e.g., from Unsplash, Imgur, or your own server).
+const DEFAULT_LOGO = "https://jpcdn.it/img/small/88e10bcd8cac2a26fc1a76d266a5f4e2.jpg"; 
+const DEFAULT_AVATAR = "https://jpcdn.it/img/small/88e10bcd8cac2a26fc1a76d266a5f4e2.jpg";
+
 // --- Theme Context ---
 type Theme = 'light' | 'dark';
 interface AppContextType {
   theme: Theme;
   toggleTheme: () => void;
   user: { name: string; email: string; avatar: string } | null;
+  appLogo: string;
   logout: () => void;
   registerChip: (id: string) => void;
   isOffline: boolean;
+  refreshUserData: () => void;
 }
 
 export const AppContext = createContext<AppContextType>({
   theme: 'light',
   toggleTheme: () => {},
   user: null,
+  appLogo: DEFAULT_LOGO,
   logout: () => {},
   registerChip: () => {},
   isOffline: false,
+  refreshUserData: () => {},
 });
 
 // --- Auth Screen ---
-const LoginScreen: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
+const LoginScreen: React.FC<{ onLogin: () => void; logo: string }> = ({ onLogin, logo }) => {
   const [isRegistering, setIsRegistering] = useState(false);
   
   return (
@@ -38,7 +47,7 @@ const LoginScreen: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
        <div className="absolute inset-0 bg-gradient-to-br from-blue-400/20 via-purple-400/20 to-orange-400/20 blur-3xl opacity-50"></div>
        <div className="z-10 w-full max-w-sm text-center animate-fade-up">
           <div className="w-28 h-28 mx-auto mb-8 flex items-center justify-center shadow-2xl rounded-[28px] overflow-hidden bg-white dark:bg-black">
-            <img src="1.jpg" alt="Aetherkraft Logo" className="w-full h-full object-cover" />
+            <img src={logo} alt="Aetherkraft Logo" className="w-full h-full object-cover" />
           </div>
           <h1 className="text-3xl font-semibold mb-2 tracking-tight text-black dark:text-white">Aetherkraft</h1>
           <p className="text-gray-500 dark:text-gray-400 mb-10 font-medium">Energy, reimagined.</p>
@@ -72,7 +81,7 @@ const LoginScreen: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
 
 // --- Settings Modal ---
 const SettingsModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, onClose }) => {
-    const { theme, toggleTheme, logout, registerChip } = useContext(AppContext);
+    const { theme, toggleTheme, logout, registerChip, refreshUserData } = useContext(AppContext);
     const [loadingCenters, setLoadingCenters] = useState(false);
     const [centers, setCenters] = useState<string[]>([]);
     const [chipId, setChipId] = useState('');
@@ -100,6 +109,19 @@ const SettingsModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isO
         alert("Chip registered successfully!");
     }
 
+    const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>, key: 'app_logo' | 'user_avatar') => {
+        const file = event.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                const base64String = reader.result as string;
+                localStorage.setItem(key, base64String);
+                refreshUserData(); // Trigger re-render in parent
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
     if (!isOpen) return null;
 
     return (
@@ -111,6 +133,31 @@ const SettingsModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isO
                 </div>
 
                 <div className="space-y-8">
+                    {/* Customization */}
+                    <div>
+                         <h3 className="font-bold mb-3 text-xs text-gray-500 uppercase tracking-wide">Customization</h3>
+                         <div className="flex gap-4">
+                             <label className="flex-1 cursor-pointer group">
+                                 <div className="bg-gray-100 dark:bg-white/5 rounded-xl p-4 text-center hover:bg-gray-200 dark:hover:bg-white/10 transition-colors">
+                                     <div className="w-10 h-10 mx-auto bg-white dark:bg-black rounded-full flex items-center justify-center mb-2 shadow-sm">
+                                         <Upload size={16} className="text-blue-500"/>
+                                     </div>
+                                     <span className="text-xs font-bold">Change Logo</span>
+                                     <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'app_logo')} />
+                                 </div>
+                             </label>
+                             <label className="flex-1 cursor-pointer group">
+                                 <div className="bg-gray-100 dark:bg-white/5 rounded-xl p-4 text-center hover:bg-gray-200 dark:hover:bg-white/10 transition-colors">
+                                     <div className="w-10 h-10 mx-auto bg-white dark:bg-black rounded-full flex items-center justify-center mb-2 shadow-sm">
+                                         <Camera size={16} className="text-purple-500"/>
+                                     </div>
+                                     <span className="text-xs font-bold">Profile Pic</span>
+                                     <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'user_avatar')} />
+                                 </div>
+                             </label>
+                         </div>
+                    </div>
+
                     {/* Theme */}
                     <div className="flex items-center justify-between p-4 border border-gray-100 dark:border-white/10 rounded-2xl">
                         <div className="flex items-center gap-3">
@@ -204,8 +251,19 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>(Tab.Home);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
-  // UPDATED USER: Name ADMIN, Avatar 2.jpg
-  const [user] = useState({ name: "ADMIN", email: "admin@aether.com", avatar: "2.jpg" });
+  
+  // User & Assets State (Initialized from LocalStorage or Defaults)
+  const [user, setUser] = useState({ 
+      name: "ADMIN", 
+      email: "admin@aether.com", 
+      avatar: localStorage.getItem('user_avatar') || DEFAULT_AVATAR 
+  });
+  const [appLogo, setAppLogo] = useState(localStorage.getItem('app_logo') || DEFAULT_LOGO);
+
+  const refreshUserData = useCallback(() => {
+      setUser(prev => ({ ...prev, avatar: localStorage.getItem('user_avatar') || DEFAULT_AVATAR }));
+      setAppLogo(localStorage.getItem('app_logo') || DEFAULT_LOGO);
+  }, []);
 
   // --- Adaptive Theme & Persistence ---
   useEffect(() => {
@@ -226,11 +284,9 @@ export default function App() {
           }
       }
 
-      // Listen for system changes if no override? 
-      // For simplicity, we just set initial. To be fully adaptive to system changes while app is open:
       const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
       const handleChange = (e: MediaQueryListEvent) => {
-          if (!localStorage.getItem('theme')) { // Only change if user hasn't manually set it
+          if (!localStorage.getItem('theme')) { 
               setTheme(e.matches ? 'dark' : 'light');
           }
       };
@@ -278,13 +334,13 @@ export default function App() {
   };
 
   if (!isAuthenticated) return (
-      <AppContext.Provider value={{ theme, toggleTheme, user: null, logout, registerChip, isOffline }}>
-        <LoginScreen onLogin={() => setIsAuthenticated(true)} />
+      <AppContext.Provider value={{ theme, toggleTheme, user: null, appLogo, logout, registerChip, isOffline, refreshUserData }}>
+        <LoginScreen onLogin={() => setIsAuthenticated(true)} logo={appLogo} />
       </AppContext.Provider>
   );
 
   return (
-    <AppContext.Provider value={{ theme, toggleTheme, user, logout, registerChip, isOffline }}>
+    <AppContext.Provider value={{ theme, toggleTheme, user, appLogo, logout, registerChip, isOffline, refreshUserData }}>
         <div className="min-h-screen selection:bg-blue-500 selection:text-white bg-ios-bg dark:bg-black text-ios-text dark:text-dark-text">
             {isOffline && (
                 <div className="bg-red-500 text-white text-xs font-bold text-center py-1 px-4 fixed top-0 w-full z-[100]">
