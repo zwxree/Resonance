@@ -1,6 +1,6 @@
 
 import React, { useState, useCallback, createContext, useContext, useEffect } from 'react';
-import { Home, Zap, Cpu, BarChart3, Bot, LogOut, Moon, Sun, MapPin, Plus, User } from 'lucide-react';
+import { Home, Zap, Cpu, BarChart3, Bot, LogOut, Moon, Sun, MapPin, Plus, WifiOff } from 'lucide-react';
 import HomeScreen from './components/DashboardScreen';
 import DevicesScreen from './components/DevicesScreen';
 import HubScreen from './components/AttunerScreen';
@@ -17,6 +17,7 @@ interface AppContextType {
   user: { name: string; email: string; avatar: string } | null;
   logout: () => void;
   registerChip: (id: string) => void;
+  isOffline: boolean;
 }
 
 export const AppContext = createContext<AppContextType>({
@@ -25,6 +26,7 @@ export const AppContext = createContext<AppContextType>({
   user: null,
   logout: () => {},
   registerChip: () => {},
+  isOffline: false,
 });
 
 // --- Auth Screen ---
@@ -42,15 +44,25 @@ const LoginScreen: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
           <p className="text-gray-500 dark:text-gray-400 mb-10 font-medium">Energy, reimagined.</p>
           
           <div className="space-y-4">
-             <input type="email" placeholder="Email" className="w-full p-4 rounded-2xl bg-white dark:bg-white/10 border border-gray-200 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-black dark:text-white placeholder-gray-400" />
-             <input type="password" placeholder="Password" className="w-full p-4 rounded-2xl bg-white dark:bg-white/10 border border-gray-200 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-black dark:text-white placeholder-gray-400" />
+             <input 
+                type="email" 
+                placeholder="Email" 
+                aria-label="Email Address"
+                className="w-full p-4 rounded-2xl bg-white dark:bg-white/10 border border-gray-200 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-black dark:text-white placeholder-gray-400" 
+             />
+             <input 
+                type="password" 
+                placeholder="Password" 
+                aria-label="Password"
+                className="w-full p-4 rounded-2xl bg-white dark:bg-white/10 border border-gray-200 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-black dark:text-white placeholder-gray-400" 
+             />
              
-             <button onClick={onLogin} className="w-full py-4 rounded-2xl bg-black dark:bg-white text-white dark:text-black font-bold text-lg shadow-lg hover:scale-[1.02] transition-transform">
+             <button onClick={onLogin} className="w-full py-4 rounded-2xl bg-black dark:bg-white text-white dark:text-black font-bold text-lg shadow-lg hover:scale-[1.02] transition-transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                 {isRegistering ? 'Create Account' : 'Sign In'}
              </button>
           </div>
           
-          <button onClick={() => setIsRegistering(!isRegistering)} className="mt-8 text-sm text-gray-500 font-medium hover:text-black dark:hover:text-white transition-colors">
+          <button onClick={() => setIsRegistering(!isRegistering)} className="mt-8 text-sm text-gray-500 font-medium hover:text-black dark:hover:text-white transition-colors focus:outline-none focus:underline">
             {isRegistering ? 'Already have an account? Log in' : 'Create new account'}
           </button>
        </div>
@@ -64,6 +76,15 @@ const SettingsModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isO
     const [loadingCenters, setLoadingCenters] = useState(false);
     const [centers, setCenters] = useState<string[]>([]);
     const [chipId, setChipId] = useState('');
+
+    // Close on Escape key
+    useEffect(() => {
+        const handleEsc = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') onClose();
+        };
+        if (isOpen) window.addEventListener('keydown', handleEsc);
+        return () => window.removeEventListener('keydown', handleEsc);
+    }, [isOpen, onClose]);
 
     const handleFindCenters = async () => {
         setLoadingCenters(true);
@@ -82,11 +103,11 @@ const SettingsModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isO
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 bg-black/20 dark:bg-black/60 backdrop-blur-md flex items-end sm:items-center justify-center sm:p-4">
+        <div className="fixed inset-0 z-50 bg-black/20 dark:bg-black/60 backdrop-blur-md flex items-end sm:items-center justify-center sm:p-4" role="dialog" aria-modal="true" aria-labelledby="settings-title">
             <div className="bg-white dark:bg-dark-card w-full sm:max-w-md h-[85vh] sm:h-auto sm:rounded-[32px] rounded-t-[32px] p-6 overflow-y-auto shadow-2xl animate-fade-up text-black dark:text-white">
                 <div className="flex justify-between items-center mb-8">
-                    <h2 className="text-2xl font-bold">Settings</h2>
-                    <button onClick={onClose} className="p-2 bg-gray-100 dark:bg-white/10 rounded-full hover:bg-gray-200 dark:hover:bg-white/20"><Plus className="rotate-45" /></button>
+                    <h2 id="settings-title" className="text-2xl font-bold">Settings</h2>
+                    <button onClick={onClose} aria-label="Close Settings" className="p-2 bg-gray-100 dark:bg-white/10 rounded-full hover:bg-gray-200 dark:hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-blue-500"><Plus className="rotate-45" /></button>
                 </div>
 
                 <div className="space-y-8">
@@ -96,7 +117,7 @@ const SettingsModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isO
                             {theme === 'light' ? <Sun size={20} /> : <Moon size={20} />}
                             <span className="font-semibold">Appearance</span>
                         </div>
-                        <button onClick={toggleTheme} className="px-4 py-2 bg-gray-100 dark:bg-white/10 rounded-full text-sm font-bold hover:bg-gray-200 dark:hover:bg-white/20 transition-colors">
+                        <button onClick={toggleTheme} className="px-4 py-2 bg-gray-100 dark:bg-white/10 rounded-full text-sm font-bold hover:bg-gray-200 dark:hover:bg-white/20 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500">
                             {theme === 'light' ? 'Light' : 'Dark'}
                         </button>
                     </div>
@@ -108,10 +129,11 @@ const SettingsModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isO
                             <input 
                                 value={chipId}
                                 onChange={(e) => setChipId(e.target.value)}
-                                placeholder="Enter Chip ID" 
-                                className="flex-1 bg-gray-100 dark:bg-white/5 p-3 rounded-xl focus:outline-none text-black dark:text-white placeholder-gray-400"
+                                placeholder="Enter Chip ID"
+                                aria-label="Enter Chip ID"
+                                className="flex-1 bg-gray-100 dark:bg-white/5 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-black dark:text-white placeholder-gray-400"
                             />
-                            <button type="submit" className="bg-black dark:bg-white text-white dark:text-black px-4 rounded-xl font-bold text-sm">Add</button>
+                            <button type="submit" className="bg-black dark:bg-white text-white dark:text-black px-4 rounded-xl font-bold text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">Add</button>
                         </form>
                     </div>
 
@@ -121,7 +143,7 @@ const SettingsModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isO
                         <button 
                             onClick={handleFindCenters}
                             disabled={loadingCenters}
-                            className="w-full flex items-center justify-between p-4 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-2xl font-bold mb-4 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
+                            className="w-full flex items-center justify-between p-4 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-2xl font-bold mb-4 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
                         >
                             <div className="flex items-center gap-2"><MapPin size={18}/> Find Service Centres</div>
                             {loadingCenters && <div className="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full"></div>}
@@ -134,7 +156,7 @@ const SettingsModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isO
                     </div>
 
                     {/* Account */}
-                    <button onClick={logout} className="w-full py-4 text-red-500 font-bold bg-red-50 dark:bg-red-900/10 rounded-2xl flex items-center justify-center gap-2 hover:bg-red-100 dark:hover:bg-red-900/20 transition-colors">
+                    <button onClick={logout} className="w-full py-4 text-red-500 font-bold bg-red-50 dark:bg-red-900/10 rounded-2xl flex items-center justify-center gap-2 hover:bg-red-100 dark:hover:bg-red-900/20 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500">
                         <LogOut size={18} /> Log Out
                     </button>
                 </div>
@@ -145,25 +167,27 @@ const SettingsModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isO
 
 const TabBar: React.FC<{ activeTab: Tab; onTabChange: (tab: Tab) => void }> = ({ activeTab, onTabChange }) => {
   const tabs: { id: Tab; icon: React.ElementType; label: string }[] = [
-    { id: Tab.Home, icon: Home, label: '' },
-    { id: Tab.Devices, icon: Zap, label: '' },
-    { id: Tab.Hub, icon: Cpu, label: '' },
-    { id: Tab.Stats, icon: BarChart3, label: '' },
-    { id: Tab.AI, icon: Bot, label: '' },
+    { id: Tab.Home, icon: Home, label: 'Home' },
+    { id: Tab.Devices, icon: Zap, label: 'Devices' },
+    { id: Tab.Hub, icon: Cpu, label: 'Hub' },
+    { id: Tab.Stats, icon: BarChart3, label: 'Statistics' },
+    { id: Tab.AI, icon: Bot, label: 'AI Assistant' },
   ];
 
   return (
     <div className="fixed bottom-8 left-0 right-0 z-40 flex justify-center pointer-events-none">
-      <div className="bg-white/80 dark:bg-[#1C1C1E]/80 backdrop-blur-xl border border-gray-200 dark:border-white/10 rounded-full px-6 py-3 shadow-2xl pointer-events-auto flex gap-6 items-center">
+      <div className="bg-white/80 dark:bg-[#1C1C1E]/80 backdrop-blur-xl border border-gray-200 dark:border-white/10 rounded-full px-6 py-3 shadow-2xl pointer-events-auto flex gap-6 items-center" role="tablist">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
             return (
               <button
                 key={tab.id}
-                onClick={() => onTabChange(tab.id)}
-                className={`relative p-3 transition-all duration-300 rounded-full group ${isActive ? 'bg-black dark:bg-white text-white dark:text-black' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'}`}
+                role="tab"
+                aria-selected={isActive}
                 aria-label={tab.label}
+                onClick={() => onTabChange(tab.id)}
+                className={`relative p-3 transition-all duration-300 rounded-full group focus:outline-none focus:ring-2 focus:ring-blue-500 ${isActive ? 'bg-black dark:bg-white text-white dark:text-black' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'}`}
               >
                 <Icon size={24} strokeWidth={isActive ? 2.5 : 2} />
               </button>
@@ -179,8 +203,40 @@ export default function App() {
   const [theme, setTheme] = useState<Theme>('light'); 
   const [activeTab, setActiveTab] = useState<Tab>(Tab.Home);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
   // UPDATED USER: Name ADMIN, Avatar 2.jpg
   const [user] = useState({ name: "ADMIN", email: "admin@aether.com", avatar: "2.jpg" });
+
+  // --- Adaptive Theme & Persistence ---
+  useEffect(() => {
+      // 1. Check localStorage
+      const savedTheme = localStorage.getItem('theme') as Theme | null;
+      if (savedTheme) {
+          setTheme(savedTheme);
+      } else {
+          // 2. Adaptive Logic (System or Time)
+          const hour = new Date().getHours();
+          const isNight = hour < 6 || hour >= 18;
+          const systemDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+          
+          if (systemDark || isNight) {
+              setTheme('dark');
+          } else {
+              setTheme('light');
+          }
+      }
+
+      // Listen for system changes if no override? 
+      // For simplicity, we just set initial. To be fully adaptive to system changes while app is open:
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      const handleChange = (e: MediaQueryListEvent) => {
+          if (!localStorage.getItem('theme')) { // Only change if user hasn't manually set it
+              setTheme(e.matches ? 'dark' : 'light');
+          }
+      };
+      mediaQuery.addEventListener('change', handleChange);
+      return () => mediaQuery.removeEventListener('change', handleChange);
+  }, []);
 
   useEffect(() => {
       if (theme === 'dark') {
@@ -188,7 +244,20 @@ export default function App() {
       } else {
           document.documentElement.classList.remove('dark');
       }
+      localStorage.setItem('theme', theme);
   }, [theme]);
+
+  // --- Offline Detection ---
+  useEffect(() => {
+      const handleOnline = () => setIsOffline(false);
+      const handleOffline = () => setIsOffline(true);
+      window.addEventListener('online', handleOnline);
+      window.addEventListener('offline', handleOffline);
+      return () => {
+          window.removeEventListener('online', handleOnline);
+          window.removeEventListener('offline', handleOffline);
+      }
+  }, []);
 
   const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
   const logout = () => setIsAuthenticated(false);
@@ -209,19 +278,26 @@ export default function App() {
   };
 
   if (!isAuthenticated) return (
-      <AppContext.Provider value={{ theme, toggleTheme, user: null, logout, registerChip }}>
+      <AppContext.Provider value={{ theme, toggleTheme, user: null, logout, registerChip, isOffline }}>
         <LoginScreen onLogin={() => setIsAuthenticated(true)} />
       </AppContext.Provider>
   );
 
   return (
-    <AppContext.Provider value={{ theme, toggleTheme, user, logout, registerChip }}>
+    <AppContext.Provider value={{ theme, toggleTheme, user, logout, registerChip, isOffline }}>
         <div className="min-h-screen selection:bg-blue-500 selection:text-white bg-ios-bg dark:bg-black text-ios-text dark:text-dark-text">
-        <main className="max-w-lg mx-auto min-h-screen relative">
-            {renderScreen()}
-        </main>
-        <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
-        <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
+            {isOffline && (
+                <div className="bg-red-500 text-white text-xs font-bold text-center py-1 px-4 fixed top-0 w-full z-[100]">
+                    <div className="flex items-center justify-center gap-2">
+                        <WifiOff size={12} /> Offline Mode - Changes saved locally
+                    </div>
+                </div>
+            )}
+            <main className={`max-w-lg mx-auto min-h-screen relative ${isOffline ? 'pt-6' : ''}`}>
+                {renderScreen()}
+            </main>
+            <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
+            <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
         </div>
     </AppContext.Provider>
   );

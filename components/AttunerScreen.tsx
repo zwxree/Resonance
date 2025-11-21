@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Power, Cpu, ShieldCheck, Wifi, Shield } from 'lucide-react';
 
@@ -63,7 +64,7 @@ const ControlSlider: React.FC<{
     return (
         <div className="bg-apple-gray-600 p-6 rounded-2xl border border-white/10">
             <div className="flex justify-between items-baseline mb-4">
-                <h3 className="text-lg font-semibold text-white">{title}</h3>
+                <h3 className="text-lg font-semibold text-white" id={`slider-label-${title.replace(/\s/g, '')}`}>{title}</h3>
                 <div className="text-right">
                     <span className="text-4xl font-bold text-electric-blue-500 transition-colors tracking-tighter">{animatedValue.toFixed(0)}</span>
                     <span className="text-xl font-medium text-apple-gray-300 ml-1">{unit}</span>
@@ -77,8 +78,12 @@ const ControlSlider: React.FC<{
                     max={max}
                     value={value}
                     onChange={(e) => setValue(parseInt(e.target.value, 10))}
-                    className="w-full h-2 bg-apple-gray-400 rounded-lg appearance-none cursor-pointer range-slider"
+                    className="w-full h-2 bg-apple-gray-400 rounded-lg appearance-none cursor-pointer range-slider focus:outline-none focus:ring-2 focus:ring-electric-blue-500"
                     style={{background: sliderBackground}}
+                    aria-labelledby={`slider-label-${title.replace(/\s/g, '')}`}
+                    aria-valuemin={min}
+                    aria-valuemax={max}
+                    aria-valuenow={value}
                 />
             </div>
              <div className="flex justify-between text-xs text-apple-gray-300 mt-2">
@@ -97,11 +102,19 @@ const SafetySwitch: React.FC = () => {
                 <div className="flex items-center space-x-4">
                      <Shield size={28} className={`transition-colors ${isSafe ? "text-electric-blue-500" : "text-apple-gray-300"}`} />
                     <div>
-                        <h3 className="text-lg font-semibold">Safety Override</h3>
+                        <h3 className="text-lg font-semibold" id="safety-label">Safety Override</h3>
                         <p className="text-sm text-apple-gray-300">Auto-shutdown on overload</p>
                     </div>
                 </div>
-                <input type="checkbox" className="toggle-switch" checked={isSafe} onChange={() => setIsSafe(!isSafe)} />
+                <input 
+                    type="checkbox" 
+                    className="toggle-switch focus:ring-2 focus:ring-electric-blue-500" 
+                    checked={isSafe} 
+                    onChange={() => setIsSafe(!isSafe)} 
+                    role="switch"
+                    aria-checked={isSafe}
+                    aria-labelledby="safety-label"
+                />
             </div>
         </div>
     )
@@ -118,14 +131,14 @@ const InfoCard: React.FC<{ icon: React.ElementType, title: string, value: string
                 <p className="text-white font-semibold">{value}</p>
             </div>
         </div>
-        {buttonText && <button className="text-sm font-semibold text-white bg-white/10 px-4 py-2 rounded-lg hover:bg-white/20 transition-colors border border-white/20">{buttonText}</button>}
+        {buttonText && <button className="text-sm font-semibold text-white bg-white/10 px-4 py-2 rounded-lg hover:bg-white/20 transition-colors border border-white/20 focus:outline-none focus:ring-2 focus:ring-electric-blue-500">{buttonText}</button>}
     </div>
 );
 
 export default function HubScreen() {
     return (
         <div className="px-5 pt-12 pb-6">
-            <h1 className="text-4xl font-extrabold mb-2">Aetherkraft Hub</h1>
+            <h1 className="text-4xl font-extrabold mb-2">The Clyff</h1>
             <p className="text-apple-gray-300 mb-10">Fine-tune your home's energy core.</p>
             <div className="space-y-6">
                 <ControlSlider 

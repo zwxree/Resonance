@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, Bot, User, ArrowUp, MapPin, Globe } from 'lucide-react';
 import { sendMessageToChat, startChat } from '../services/geminiService';
@@ -77,12 +78,7 @@ export default function AiScreen() {
       const sources = chunks.reduce((acc: any[], chunk: any) => {
           if (chunk.web) {
               acc.push({ type: 'web', ...chunk.web });
-          } else if (chunk.maps) { // Assuming structure, though prompt says maps.uri usually implies it's in chunks
-             // Maps usually provides inline snippets but let's try to link
-             // Based on guidelines: groundingChunks.maps.uri and groundingChunks.maps.placeAnswerSources.reviewSnippets
-             // But typical structure is chunk.web or similar. The guidelines example for maps just logs chunks.
-             // I will optimistically parse generic structure or specific maps props.
-             // The prompt example: [{"maps": {"uri": "", "title": ""}, ... }]
+          } else if (chunk.maps) {
              acc.push({ type: 'maps', ...chunk.maps });
           }
           return acc;
@@ -100,7 +96,8 @@ export default function AiScreen() {
                         href={source.uri} 
                         target="_blank" 
                         rel="noopener noreferrer" 
-                        className="flex items-center bg-black/20 hover:bg-black/40 text-electric-blue-500 px-2 py-1 rounded-md transition-colors"
+                        className="flex items-center bg-black/20 hover:bg-black/40 text-electric-blue-500 px-2 py-1 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-electric-blue-500"
+                        aria-label={`Source: ${source.title || 'Link'}`}
                       >
                           {source.type === 'maps' ? <MapPin size={10} className="mr-1"/> : <Globe size={10} className="mr-1"/>}
                           <span className="truncate max-w-[150px]">{source.title || 'Link'}</span>
@@ -118,7 +115,7 @@ export default function AiScreen() {
              <p className="text-apple-gray-300">Your personal energy assistant.</p>
         </header>
 
-        <div className="flex-1 overflow-y-auto space-y-6 -mr-4 pr-4">
+        <div className="flex-1 overflow-y-auto space-y-6 -mr-4 pr-4" aria-live="polite">
           {messages.map((msg, index) => (
             <div key={index} className={`flex items-start gap-3 ${msg.sender === 'user' ? 'justify-end' : ''}`}>
               {msg.sender === 'bot' && <div className="w-8 h-8 rounded-full bg-apple-gray-500 flex items-center justify-center flex-shrink-0"><Bot size={20} className="text-electric-blue-500" /></div>}
@@ -140,19 +137,21 @@ export default function AiScreen() {
         </div>
         
         <form onSubmit={handleSend} className="mt-6">
-          <div className="flex items-center bg-black/30 backdrop-blur-lg rounded-full border border-white/10 p-1.5 shadow-lg">
+          <div className="flex items-center bg-black/30 backdrop-blur-lg rounded-full border border-white/10 p-1.5 shadow-lg focus-within:ring-2 focus-within:ring-electric-blue-500">
             <input
               ref={inputRef}
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ask Aetherkraft..."
+              aria-label="Chat Input"
               className="w-full bg-transparent p-3 text-white placeholder-apple-gray-300 focus:outline-none"
               disabled={isLoading}
             />
             <button 
               type="submit" 
-              className="w-10 h-10 flex items-center justify-center rounded-full transition-colors duration-200 disabled:bg-apple-gray-500 bg-electric-blue-500 text-white" 
+              aria-label="Send Message"
+              className="w-10 h-10 flex items-center justify-center rounded-full transition-colors duration-200 disabled:bg-apple-gray-500 bg-electric-blue-500 text-white focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-electric-blue-500" 
               disabled={isLoading || !input.trim()}
             >
               <ArrowUp size={24} />
